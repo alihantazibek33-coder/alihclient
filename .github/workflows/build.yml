@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -16,19 +17,27 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Find ZIP and extract
+      - name: Extract ZIP
         run: |
+          mkdir -p source
           unzip -o *.zip -d source
-          find source -name gradlew -type f
+          echo "=== PROJECT FILES ==="
+          find source -maxdepth 5 -type f | head -200
 
-      - name: Build mod
+      - name: Build
         run: |
-          cd "$(dirname "$(find source -name gradlew -type f | head -n 1)")"
-          chmod +x gradlew
-          ./gradlew build
+          GRADLE_FILE=$(find source -name build.gradle -o -name build.gradle.kts | head -n 1)
+          if [ -z "$GRADLE_FILE" ]; then
+            echo "ERROR: build.gradle табылмады!"
+            exit 1
+          fi
+          PROJECT_DIR=$(dirname "$GRADLE_FILE")
+          cd "$PROJECT_DIR"
+          gradle build
 
       - name: Upload JAR
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: ShadowClient-JAR
-          path: source/**/build/libs/*.jar
+          path: '**/build/libs/*.jar'

@@ -9,22 +9,26 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
 
-      - name: Extract source ZIP
+      - name: Find ZIP and extract
         run: |
-          unzip -o "ShadowClient-Combat-1.21.4-source.zip" -d source
+          unzip -o *.zip -d source
           find source -name gradlew -type f
 
       - name: Build mod
         run: |
-          cd source/ShadowClient-Combat-1.21.4
+          cd "$(dirname "$(find source -name gradlew -type f | head -n 1)")"
           chmod +x gradlew
           ./gradlew build
+
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShadowClient-JAR
+          path: source/**/build/libs/*.jar
